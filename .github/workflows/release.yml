@@ -67,7 +67,7 @@ jobs:
           7z a "$staging.zip" "$staging"
           echo "ASSET=$staging.zip" >> "$GITHUB_ENV"
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: ${{ env.ASSET }}
           fail_on_unmatched_files: true
