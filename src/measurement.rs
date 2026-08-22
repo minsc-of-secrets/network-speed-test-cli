@@ -48,6 +48,11 @@ pub async fn run_phase(
 
 /// The concurrency/aggregation core of [`run_phase`], separated out so it can
 /// be unit-tested without depending on wall-clock Throughput.
+///
+/// Uses a [`tokio::task::JoinSet`] rather than a `Vec<JoinHandle>` so that if
+/// one Stream errors, the rest can be aborted immediately instead of
+/// continuing to transfer data for the remainder of the Phase only to have
+/// their results discarded.
 async fn run_phase_bytes(
     transport: Arc<dyn Transport>,
     phase: Phase,
@@ -55,21 +60,31 @@ async fn run_phase_bytes(
     stream_count: usize,
     progress: Arc<AtomicU64>,
 ) -> anyhow::Result<u64> {
-    let mut handles = Vec::with_capacity(stream_count);
+    let mut streams = tokio::task::JoinSet::new();
     for _ in 0..stream_count {
         let transport = transport.clone();
         let progress = progress.clone();
-        handles.push(tokio::spawn(async move {
+        streams.spawn(async move {
             match phase {
                 Phase::Download => transport.run_download_stream(deadline, progress).await,
                 Phase::Upload => transport.run_upload_stream(deadline, progress).await,
             }
-        }));
+        });
     }
 
     let mut total = 0u64;
-    for handle in handles {
-        total += handle.await??;
+    while let Some(result) = streams.join_next().await {
+        match result {
+            Ok(Ok(bytes)) => total += bytes,
+            Ok(Err(err)) => {
+                streams.abort_all();
+                return Err(err);
+            }
+            Err(join_err) => {
+                streams.abort_all();
+                return Err(join_err.into());
+            }
+        }
     }
     Ok(total)
 }

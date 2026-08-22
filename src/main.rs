@@ -99,10 +99,11 @@ async fn run_phase_with_progress(
         }
     });
 
-    let mbps =
-        measurement::run_phase(transport, phase, PHASE_DURATION, STREAM_COUNT, progress).await?;
-
+    let result =
+        measurement::run_phase(transport, phase, PHASE_DURATION, STREAM_COUNT, progress).await;
     ticker.abort();
+    let mbps = result?;
+
     bar.set_position(total_ms);
     bar.finish_with_message(format!("{mbps:.2} Mbps"));
 
