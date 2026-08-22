@@ -1,0 +1,24 @@
+[package]
+name = "nst"
+version = "0.1.0"
+edition = "2024"
+description = "A lightweight CLI network speed test"
+license = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "nst"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+indicatif = "0.17"
+async-trait = "0.1"
+anyhow = "1"
+
+[dev-dependencies]
+wiremock = "0.6"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "test-util"] }
