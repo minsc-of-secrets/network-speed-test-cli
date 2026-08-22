@@ -10,9 +10,11 @@ use std::time::{Duration, Instant};
 use async_trait::async_trait;
 
 /// Size of each chunk requested/sent while a stream is running. Small enough
-/// that a stream can react quickly to a deadline, large enough to keep HTTP
-/// overhead negligible relative to transfer time.
-pub const CHUNK_BYTES: usize = 10_000_000;
+/// that a stream can react quickly to a deadline and to stay clear of
+/// Cloudflare's stricter rate limiting on large `bytes` values (10MB chunks
+/// were observed to trip a ~1 hour 429 lockout under sustained use), large
+/// enough to keep HTTP overhead negligible relative to transfer time.
+pub const CHUNK_BYTES: usize = 1_000_000;
 
 #[async_trait]
 pub trait Transport: Send + Sync {
