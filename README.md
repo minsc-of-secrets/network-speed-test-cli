@@ -13,6 +13,17 @@ Latency:      50.8 ms
 
 ## Install
 
+### Homebrew (macOS)
+
+```
+brew install minsc-of-secrets/nst/nst
+```
+
+This builds from source via `cargo`, so Homebrew will also pull in a Rust
+toolchain as a build dependency.
+
+### From source
+
 Requires a [Rust toolchain](https://rustup.rs/).
 
 ```
