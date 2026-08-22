@@ -2,8 +2,13 @@
 name = "nst"
 version = "0.1.1"
 edition = "2024"
+rust-version = "1.88"
 description = "A lightweight CLI network speed test"
+repository = "https://github.com/minsc-of-secrets/network-speed-test-cli"
+readme = "README.md"
 license = "MIT OR Apache-2.0"
+keywords = ["speedtest", "network", "cli", "bandwidth"]
+categories = ["command-line-utilities", "network-programming"]
 
 [[bin]]
 name = "nst"
