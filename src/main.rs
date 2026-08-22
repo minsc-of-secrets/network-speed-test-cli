@@ -17,6 +17,14 @@ struct Cli {
     /// Print the result as JSON instead of human-readable text.
     #[arg(long)]
     json: bool,
+
+    /// Duration of each Phase (download/upload), in seconds.
+    #[arg(long, default_value_t = PHASE_DURATION.as_secs())]
+    duration: u64,
+
+    /// Number of concurrent Streams per Phase.
+    #[arg(long, default_value_t = STREAM_COUNT)]
+    connections: usize,
 }
 
 #[tokio::main]
@@ -29,9 +37,13 @@ async fn main() {
 
 async fn run() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    let transport: Arc<dyn Transport> = Arc::new(CloudflareTransport::new()?);
+    anyhow::ensure!(cli.duration >= 1, "--duration must be at least 1 second");
+    anyhow::ensure!(cli.connections >= 1, "--connections must be at least 1");
 
-    let result = measure(transport).await?;
+    let transport: Arc<dyn Transport> = Arc::new(CloudflareTransport::new()?);
+    let phase_duration = Duration::from_secs(cli.duration);
+
+    let result = measure(transport, phase_duration, cli.connections).await?;
 
     if cli.json {
         println!("{}", serde_json::to_string_pretty(&result)?);
@@ -44,7 +56,11 @@ async fn run() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn measure(transport: Arc<dyn Transport>) -> anyhow::Result<MeasurementResult> {
+async fn measure(
+    transport: Arc<dyn Transport>,
+    phase_duration: Duration,
+    stream_count: usize,
+) -> anyhow::Result<MeasurementResult> {
     let spinner = ProgressBar::new_spinner();
     spinner.set_style(ProgressStyle::with_template("{spinner} {msg}").unwrap());
     spinner.enable_steady_tick(Duration::from_millis(100));
@@ -54,9 +70,22 @@ async fn measure(transport: Arc<dyn Transport>) -> anyhow::Result<MeasurementRes
         measurement::measure_idle_latency(transport.as_ref(), LATENCY_SAMPLES).await?;
     spinner.finish_and_clear();
 
-    let download_mbps =
-        run_phase_with_progress(transport.clone(), Phase::Download, "Download").await?;
-    let upload_mbps = run_phase_with_progress(transport, Phase::Upload, "Upload").await?;
+    let download_mbps = run_phase_with_progress(
+        transport.clone(),
+        Phase::Download,
+        "Download",
+        phase_duration,
+        stream_count,
+    )
+    .await?;
+    let upload_mbps = run_phase_with_progress(
+        transport,
+        Phase::Upload,
+        "Upload",
+        phase_duration,
+        stream_count,
+    )
+    .await?;
 
     Ok(MeasurementResult {
         download_mbps,
@@ -67,13 +96,15 @@ async fn measure(transport: Arc<dyn Transport>) -> anyhow::Result<MeasurementRes
 
 /// Runs one Phase while driving an indicatif progress bar off the Phase's
 /// shared byte counter — the bar's position tracks elapsed time against
-/// `PHASE_DURATION`, and its message shows the running Mbps rate.
+/// `phase_duration`, and its message shows the running Mbps rate.
 async fn run_phase_with_progress(
     transport: Arc<dyn Transport>,
     phase: Phase,
     label: &str,
+    phase_duration: Duration,
+    stream_count: usize,
 ) -> anyhow::Result<f64> {
-    let total_ms = PHASE_DURATION.as_millis() as u64;
+    let total_ms = phase_duration.as_millis() as u64;
     let bar = ProgressBar::new(total_ms);
     bar.set_style(
         ProgressStyle::with_template("{prefix:9} [{bar:30.cyan/blue}] {msg}")
@@ -100,7 +131,7 @@ async fn run_phase_with_progress(
     });
 
     let result =
-        measurement::run_phase(transport, phase, PHASE_DURATION, STREAM_COUNT, progress).await;
+        measurement::run_phase(transport, phase, phase_duration, stream_count, progress).await;
     ticker.abort();
     let mbps = result?;
 

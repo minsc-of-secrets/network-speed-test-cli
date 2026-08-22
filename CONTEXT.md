@@ -10,19 +10,21 @@ One full execution of `nst`. Produces exactly one Result, consisting of a
 Download Throughput, an Upload Throughput, and an Idle Latency.
 
 **Phase**
-A fixed-duration (10s) window during which one direction is exercised: the
+A fixed-duration window during which one direction is exercised: the
 Download Phase or the Upload Phase. A Measurement Run has exactly one Download
-Phase and one Upload Phase, run sequentially.
+Phase and one Upload Phase, run sequentially. Duration defaults to 10s,
+overridable per Measurement Run via `--duration`.
 
 **Stream**
-A single concurrent HTTP transfer within a Phase. A Phase runs 4 Streams
-concurrently for its full duration.
+A single concurrent HTTP transfer within a Phase. A Phase runs a fixed number
+of Streams concurrently for its full duration — 4 by default, overridable per
+Measurement Run via `--connections`.
 
 **Throughput**
-The aggregate transfer rate of a Phase, in Mbps — the sum of all 4 Streams'
-bytes transferred during the Phase, divided by the Phase duration. Not a
-per-Stream average: Throughput represents the effective combined bandwidth,
-matching what tools like Ookla/fast.com report as "your speed."
+The aggregate transfer rate of a Phase, in Mbps — the sum of all of its
+Streams' bytes transferred during the Phase, divided by the Phase duration.
+Not a per-Stream average: Throughput represents the effective combined
+bandwidth, matching what tools like Ookla/fast.com report as "your speed."
 
 **Idle Latency**
 The median round-trip time of several HTTP requests sent to the Cloudflare

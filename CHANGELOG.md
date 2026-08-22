@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `Cargo.toml` metadata: `repository`, `readme`, `keywords`, `categories`,
   and `rust-version` (MSRV 1.88, verified in CI).
 - `CHANGELOG.md`.
+- `--duration <SECONDS>` and `--connections <N>` flags, overriding the
+  default Phase duration (10s) and Stream count (4) per Measurement Run.
 
 ## [0.1.1] - 2026-08-22
 
