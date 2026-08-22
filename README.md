@@ -13,14 +13,34 @@ Latency:      50.8 ms
 
 ## Install
 
+No Rust toolchain required for any of these — prebuilt binaries are
+published to [GitHub Releases](../../releases) for macOS (Apple Silicon
+and Intel), Linux (x86_64), and Windows (x86_64).
+
 ### Homebrew (macOS)
 
 ```
 brew install minsc-of-secrets/nst/nst
 ```
 
-This builds from source via `cargo`, so Homebrew will also pull in a Rust
-toolchain as a build dependency.
+### Direct download (macOS / Linux / Windows)
+
+Grab the archive for your platform from the
+[latest release](../../releases/latest), extract it, and run the `nst`
+binary inside — e.g. on macOS/Linux:
+
+```
+tar xzf nst-*-<target>.tar.gz
+./nst-*-<target>/nst
+```
+
+On macOS, since the binary isn't notarized, Gatekeeper may refuse to run
+it the first time ("cannot be opened because the developer cannot be
+verified"). Clear the quarantine flag once with:
+
+```
+xattr -d com.apple.quarantine ./nst-*-<target>/nst
+```
 
 ### From source
 
